@@ -6,30 +6,17 @@ import java.io.IOException;
 
 public class Renju {
 
+    public static final String FILE_PATH = "src/main/java/org/example/input3.txt";
+
+    public static final int SIZE = 19;
+
     public static void main(String[] args) {
         try {
-            BufferedReader reader = new BufferedReader(new FileReader("src/main/java/org/example/input3.txt"));
+            BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH));
 
             int numTestCases = Integer.parseInt(reader.readLine());
 
-            for (int t = 0; t < numTestCases; t++) {
-                int[][] board = new int[19][19];
-
-                for (int i = 0; i < 19; i++) {
-                    String[] line = reader.readLine().split(" ");
-                    for (int j = 0; j < 19; j++) {
-                        board[i][j] = Integer.parseInt(line[j]);
-                    }
-                }
-
-                int winner = checkWinner(board);
-
-                System.out.println(winner);
-                if (winner != 0) {
-                    int[] coordinates = findLeftmostStone(board, winner);
-                    System.out.println((coordinates[0] + 1) + " " + (coordinates[1] + 1));
-                }
-            }
+            parseInput(reader, numTestCases);
 
             reader.close();
         } catch (IOException e) {
@@ -37,56 +24,47 @@ public class Renju {
         }
     }
 
-    public static int checkWinner(int[][] board) {
-        for (int i = 0; i < 19; i++) {
-            for (int j = 0; j < 19; j++) {
+    private static void parseInput(BufferedReader reader, int numTestCases) throws IOException {
+        for (int t = 0; t < numTestCases; t++) {
+            int[][] board = new int[SIZE][SIZE];
+
+            for (int i = 0; i < SIZE; i++) {
+                String[] line = reader.readLine().split(" ");
+                for (int j = 0; j < SIZE; j++) {
+                    board[i][j] = Integer.parseInt(line[j]);
+                }
+            }
+
+            int winner = checkWinner(board);
+
+            System.out.println(winner);
+            if (winner != 0) {
+                int[] coordinates = findLeftmostStone(board, winner);
+                System.out.println((coordinates[0] + 1) + " " + (coordinates[1] + 1));
+            }
+        }
+    }
+
+    private static int checkWinner(int[][] board) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
                 if (board[i][j] != 0) {
                     int color = board[i][j];
 
-                    if (j + 4 < 19
-                            && board[i][j + 1] == color
-                            && board[i][j + 2] == color
-                            && board[i][j + 3] == color
-                            && board[i][j + 4] == color) {
-                        if (j + 5 != 19 && board[i][j + 5] == color) {
-                            return 0;
-                        }
-                        return color;
+                    if (checkFollowingStones(i, j, 0, 1, color, board)) {
+                        return returnWinningColor(i, j, 0, 1, color, board);
                     }
 
-                    if (i + 4 < 19
-                            && board[i + 1][j] == color
-                            && board[i + 2][j] == color
-                            && board[i + 3][j] == color
-                            && board[i + 4][j] == color) {
-                        if (i + 5 != 19 && board[i + 5][j] == color) {
-                            return 0;
-                        }
-                        return color;
+                    if (checkFollowingStones(i, j, 1, 0, color, board)) {
+                        return returnWinningColor(i, j, 1, 0, color, board);
                     }
 
-                    if (i + 4 < 19
-                            && j + 4 < 19
-                            && board[i + 1][j + 1] == color
-                            && board[i + 2][j + 2] == color
-                            && board[i + 3][j + 3] == color
-                            && board[i + 4][j + 4] == color) {
-                        if (i + 5 != 19 && j + 5 != 19 && board[i + 5][j + 5] == color) {
-                            return 0;
-                        }
-                        return color;
+                    if (checkFollowingStones(i, j, 1, 1, color, board)) {
+                        return returnWinningColor(i, j, 1, 1, color, board);
                     }
 
-                    if (i - 4 >= 0
-                            && j + 4 < 19
-                            && board[i - 1][j + 1] == color
-                            && board[i - 2][j + 2] == color
-                            && board[i - 3][j + 3] == color
-                            && board[i - 4][j + 4] == color) {
-                        if (i - 5 >= 0 && j + 5 != 19 && board[i - 5][j + 5] == color) {
-                            return 0;
-                        }
-                        return color;
+                    if (checkFollowingStones(i, j, -1, 1, color, board)) {
+                        return returnWinningColor(i, j, -1, 1, color, board);
                     }
                 }
             }
@@ -94,11 +72,28 @@ public class Renju {
         return 0;
     }
 
-    public static int[] findLeftmostStone(int[][] board, int color) {
+    private static boolean checkFollowingStones (int i, int j, int iDirection, int jDirection, int color, int[][] board) {
+        return i + 4 * iDirection >= 0
+                && i + 4 * iDirection < SIZE
+                && j + 4 * jDirection < SIZE
+                && board[i + iDirection][j + jDirection] == color
+                && board[i + 2 * iDirection][j + 2 * jDirection] == color
+                && board[i + 3 * iDirection][j + 3 * jDirection] == color
+                && board[i + 4 * iDirection][j + 4 * jDirection] == color;
+    }
+
+    private static int returnWinningColor (int i, int j, int iDirection, int jDirection, int color, int[][] board) {
+        if (i + 5 * iDirection >= 0 && i + 5 * iDirection != SIZE && j + 5 * jDirection != SIZE && board[i + 5 * iDirection][j + 5 * jDirection] == color) {
+            return 0;
+        }
+        return color;
+    }
+
+    private static int[] findLeftmostStone(int[][] board, int color) {
         int[] coordinates = new int[2];
 
-        for (int i = 0; i < 19; i++) {
-            for (int j = 0; j < 19; j++) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
                 if (board[j][i] == color) {
                     coordinates[0] = j;
                     coordinates[1] = i;
